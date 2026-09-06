@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff
+
+      - name: Lint
+        run: ruff check src scripts tests
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Smoke-test the analysis scripts
+        run: |
+          python scripts/02_spectrum.py
+          python scripts/03_backtest.py --window 500 --step 63
+          python scripts/05_crisis_robustness.py
+          python scripts/06_analyze.py --prices data/processed/blue_chip_2006_2018.csv.gz --window 500 --step 63
+
+      - name: Upload figures
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: figures
+          path: results/figures/
