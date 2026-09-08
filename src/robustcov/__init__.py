@@ -20,6 +20,17 @@ from .estimators import (
     pca_factor_model,
     sample_covariance,
 )
+from .inference import (
+    annualized_return_ci,
+    annualized_vol_ci,
+    block_bootstrap_ci,
+    deflated_sharpe_ratio,
+    deflated_sharpe_ratio_from_returns,
+    expected_max_sharpe,
+    sharpe_ratio,
+    sharpe_ratio_ci,
+    skew_kurtosis,
+)
 from .portfolios import (
     PORTFOLIOS,
     equal_risk_contribution,
@@ -56,5 +67,14 @@ __all__ = [
     "walk_forward",
     "summarise",
     "BacktestResult",
+    "block_bootstrap_ci",
+    "sharpe_ratio",
+    "sharpe_ratio_ci",
+    "annualized_return_ci",
+    "annualized_vol_ci",
+    "skew_kurtosis",
+    "expected_max_sharpe",
+    "deflated_sharpe_ratio",
+    "deflated_sharpe_ratio_from_returns",
     "__version__",
 ]

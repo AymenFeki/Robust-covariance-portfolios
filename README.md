@@ -163,6 +163,62 @@ different dataset, different universe size, different decade, different
 market regime — landing on the same mechanism for the same reason: `q ≈ 1` is
 where inversion fails, independent of everything else about the data.
 
+## Statistical significance: how much of this is noise?
+
+Every table above reports point estimates from one realised five-year path
+of the market. Two questions that raises, and which the "Threats to
+validity" table in `docs/METHODOLOGY.md` used to flag as open, are answered
+by `scripts/07_significance.py`:
+
+**How uncertain is any one number?** A block bootstrap (Kunsch, 1989) of
+each estimator's realised out-of-sample return series gives a 95%
+confidence interval for its Sharpe ratio and annualised volatility, without
+re-running the estimation itself — it asks "how much would this statistic
+move under an alternative history the market could plausibly have drawn",
+holding the estimation procedure fixed.
+
+| Estimator (long-only) | Sharpe | 95% CI | Ann. vol | 95% CI |
+|---|---:|---:|---:|---:|
+| Sample | 0.75 | [−0.16, 1.67] | 9.67% | [8.74%, 10.75%] |
+| LW-identity | 0.76 | [−0.15, 1.68] | 9.60% | [8.65%, 10.67%] |
+| LW-constcorr | 0.67 | [−0.24, 1.58] | 9.56% | [8.65%, 10.58%] |
+| MP-clipped | 0.42 | [−0.48, 1.33] | 9.71% | [8.74%, 10.83%] |
+| PCA-5factor | 0.51 | [−0.39, 1.40] | 9.58% | [8.64%, 10.66%] |
+
+The pattern the README already argued for informally is now quantified: the
+**volatility** confidence intervals are tight relative to the spread between
+estimators, so that comparison is solid. The **Sharpe ratio** intervals all
+cross zero — every one of them — so none of the return-based rankings
+anywhere in this README should be read as statistically distinguishable
+from each other, or in most cases from zero. This is the project's own
+mechanism at work, correctly showing its limits: Sharpe ratios depend on
+realised returns, which nothing here forecasts or has any right to predict.
+
+**Given that five estimators were compared and the best one picked, how
+much of its apparent edge is just the best draw among five noisy draws?**
+The deflated Sharpe ratio (Bailey & Lopez de Prado, 2014) answers this by
+computing the Sharpe ratio the best of five *worthless* strategies would be
+expected to show by chance alone, and asking whether the observed best
+clears that bar, correcting simultaneously for non-normal (fat-tailed,
+skewed) returns.
+
+- **Unconstrained GMV**: PCA-5factor is the best performer at SR=1.26,
+  against a chance benchmark of 0.28 for the best of five random trials.
+  Deflated Sharpe ratio **0.975** — this edge is unlikely to be pure
+  selection artefact.
+- **Long-only**: LW-identity is the best performer at SR=0.76, against a
+  chance benchmark of 0.18. Deflated Sharpe ratio **0.873** — directionally
+  positive, but not distinguishable from chance at the conventional 0.95
+  threshold.
+
+Read together with the constrained-vs-unconstrained result two sections
+up, the honest summary is: the *volatility* case for regularised covariance
+estimation is solid and holds up under resampling; the *return/Sharpe* case
+is suggestive at best, and for the long-only portfolios that anyone would
+actually trade, not statistically established at all. That is not a flaw
+this analysis is hiding — it is what a five-year, five-estimator, one-market
+comparison honestly supports, no more and no less.
+
 ## Data
 
 Daily closing prices for S&P 500 constituents, August 2012 – August 2017,
@@ -209,12 +265,15 @@ python scripts/02_spectrum.py                      # spectrum figure + MP check
 python scripts/03_backtest.py --cost-bps 10        # the results tables
 python scripts/04_window_sweep.py                  # the window sweep figure
 python scripts/05_crisis_robustness.py             # the 2008-crisis robustness check
-pytest                                             # 55 tests
+python scripts/07_significance.py                  # bootstrap CIs + deflated Sharpe ratio
+pytest                                             # 81 tests
 ```
 
 Every number in this README is printed by those scripts. Runtime is about
-three minutes total on a laptop; dependencies are numpy, pandas, matplotlib,
-scipy (tests only) and pytest.
+four minutes total on a laptop (07_significance.py's bootstrap is the
+slowest single step, ~1 minute at the default 2000 resamples — pass
+`--n-boot 500` for a quicker, slightly less precise pass); dependencies are
+numpy, pandas, matplotlib, scipy (tests only) and pytest.
 
 ### Running it on your own data
 
@@ -254,16 +313,19 @@ Stated plainly, because a backtest that does not list these is hiding them.
   covariance; it understates level returns by roughly 2% a year.
 - **Linear transaction costs.** 10 bps of traded notional, with no market
   impact, and impact is precisely what a 400%-short book would run into.
-- **A single realisation.** No confidence intervals on the Sharpe ratios, and
-  no correction for having compared five estimators on one dataset. The
-  volatility differences are far more trustworthy than the return differences.
+- **A single realisation.** Quantified, not just asserted, in the
+  "Statistical significance" section above: bootstrap confidence intervals
+  on every Sharpe ratio all cross zero, and the deflated Sharpe ratio shows
+  the long-only comparison's best performer is not distinguishable from the
+  best of five random strategies at conventional confidence. The volatility
+  differences carry tighter intervals and remain far more trustworthy.
 
 ## Roadmap
 
 - [ ] Nonlinear shrinkage (Ledoit & Wolf, 2017) — the current state of the art
 - [ ] Dynamic conditional correlation (DCC-GARCH) for time-varying covariance
 - [ ] Hierarchical risk parity (López de Prado, 2016), which avoids inversion
-- [ ] Bootstrapped confidence intervals and the deflated Sharpe ratio
+- [x] Bootstrapped confidence intervals and the deflated Sharpe ratio
 - [x] A second universe and a stress period (2007–2009) to test regime dependence
 - [ ] A high-`p` universe that also spans the 2008 crisis, to test the estimator
       *ranking* (not just the phase-transition mechanism) under real stress
@@ -275,6 +337,9 @@ Stated plainly, because a backtest that does not list these is hiding them.
 - Laloux, L., Cizeau, P., Potters, M. & Bouchaud, J.-P. (2000). Random matrix theory and financial correlations. *IJTAF*, 3(3), 391–397.
 - Jagannathan, R. & Ma, T. (2003). Risk reduction in large portfolios: why imposing the wrong constraints helps. *Journal of Finance*, 58(4), 1651–1683.
 - DeMiguel, V., Garlappi, L. & Uppal, R. (2009). Optimal versus naive diversification. *Review of Financial Studies*, 22(5), 1915–1953.
+- Bailey, D. H. & Lopez de Prado, M. (2014). The deflated Sharpe ratio: correcting for selection bias, backtest overfitting and non-normality. *Journal of Portfolio Management*, 40(5), 94–107.
+- Kunsch, H. R. (1989). The jackknife and the bootstrap for general stationary observations. *Annals of Statistics*, 17(3), 1217–1241.
+- Lo, A. W. (2002). The statistics of Sharpe ratios. *Financial Analysts Journal*, 58(4), 36–52.
 - Chopra, V. & Ziemba, W. (1993). The effect of errors in means, variances and covariances on optimal portfolio choice. *Journal of Portfolio Management*, 19(2), 6–11.
 
 ## License

@@ -40,6 +40,7 @@ jobs:
           python scripts/03_backtest.py --window 500 --step 63
           python scripts/05_crisis_robustness.py
           python scripts/06_analyze.py --prices data/processed/blue_chip_2006_2018.csv.gz --window 500 --step 63
+          python scripts/07_significance.py --window 500 --step 63 --n-boot 100
 
       - name: Upload figures
         if: matrix.python-version == '3.12'

@@ -143,14 +143,62 @@ data. The weights were constant, so the test passed while detecting nothing.
 The fixture now generates returns with genuine factor structure. **A passing
 test on data that cannot express the failure is not evidence of anything.**
 
-## 5. Threats to validity
+## 5. Statistical inference: how much of the comparison is noise?
+
+`src/robustcov/inference.py`, exercised by `scripts/07_significance.py`.
+
+**Bootstrap confidence intervals.** Each estimator's out-of-sample return
+series is resampled via a *circular block bootstrap* (Kunsch, 1989) rather
+than an ordinary iid bootstrap: daily returns are approximately uncorrelated
+in mean but not in variance (volatility clustering), so resampling single
+days independently would understate the true sampling variance of any
+path-dependent statistic. Blocks of consecutive days (default length
+`n^(1/3)`, the standard consistency rate for block bootstraps of dependent
+data) are drawn with wraparound at the series' end and concatenated back to
+the original length; percentiles of the resulting distribution of, e.g.,
+the Sharpe ratio give the confidence interval. This resamples the *realised
+return path*, not the estimation procedure — it answers "how much would
+this statistic vary across alternative histories the market could
+plausibly have drawn", not "how much would the weights vary under a
+different covariance estimate".
+
+**The deflated Sharpe ratio** (Bailey & Lopez de Prado, 2014) addresses a
+different problem: five estimators were compared and the best one's Sharpe
+ratio reported, but the best of five noisy draws looks good even if every
+single one has zero true skill. The test statistic
+
+```
+z = (SR_hat − SR_0) * sqrt(T − 1) / sqrt(1 − γ₃·SR_hat + (γ₄−1)/4 · SR_hat²)
+```
+
+compares the observed Sharpe ratio `SR_hat` against `SR_0`, the Sharpe ratio
+the best of `N` *worthless* strategies would be expected to show by pure
+chance (from the classical extreme-value approximation for the maximum of
+`N` correlated Gaussians), while `γ₃` and `γ₄` (skewness and kurtosis of the
+actual returns) correct for the fact that financial returns are not
+Gaussian. With `γ₃ = 0` and `γ₄ = 3`, the denominator reduces to
+Lo (2002)'s `1 + SR_hat²/2` — the Sharpe ratio estimator's own variance
+depends on the true Sharpe ratio, since dividing by an estimated standard
+deviation adds variance beyond what the mean alone would contribute.
+`DSR = Φ(z)` is the resulting probability that the true Sharpe ratio
+exceeds the chance benchmark.
+
+Applied to this project's own results: the long-only comparison's best
+performer (LW-identity, SR=0.76) has a deflated Sharpe ratio of 0.87 against
+a chance benchmark of 0.18 for the best of five trials — a real edge is
+plausible, but not established at the conventional 0.95 threshold. The
+unconstrained comparison's best performer (PCA-5factor, SR=1.26 against a
+chance benchmark of 0.28) clears it at 0.975. See the README's "Statistical
+significance" section for the full tables.
+
+## 6. Threats to validity
 
 | Threat | Effect | Handling |
 |---|---|---|
 | Survivorship bias | Inflates returns | Documented; volatility comparison is far less affected since all estimators share the universe |
 | Single regime, single dimensionality | Rankings may not hold under stress *at high `p`* | `scripts/05_crisis_robustness.py` confirms the phase-transition *mechanism* replicates independently in the 2008 crisis on a second dataset; it cannot confirm the specific four-estimator *ranking* under stress at high `p`, since the crisis panel only has 23 assets |
 | No dividends | Understates returns ≈2%/yr | Immaterial for daily covariance |
-| Multiple comparisons | Five estimators, one dataset | No deflated Sharpe ratio computed; return differences should be read as suggestive, volatility differences as solid |
+| Multiple comparisons | Five estimators, one dataset | Quantified via `scripts/07_significance.py`: bootstrap 95% CIs on every Sharpe ratio cross zero; the long-only comparison's best performer has a deflated Sharpe ratio of 0.87 (Bailey & Lopez de Prado, 2014), not distinguishable from the best of five random strategies at the conventional 0.95 threshold. Volatility CIs are much tighter and remain the trustworthy comparison |
 | No market impact | Understates the cost of high-turnover strategies | Linear costs only; the sample estimator's 8× monthly turnover would fare worse still |
 | Data cleaning discretion | Excluding tickers is a choice | Every exclusion is listed by name and date in the cleaning report, for both datasets |
 
@@ -164,7 +212,7 @@ ordering of four regularised estimators separated by half a percentage point
 of volatility — that comparison has only ever been run once, at high `p`, on
 the 2012–17 panel.
 
-## 6. What would strengthen it
+## 7. What would strengthen it
 
 In rough order of value added:
 
@@ -175,8 +223,8 @@ In rough order of value added:
 2. **Nonlinear shrinkage** (Ledoit & Wolf, 2017), which shrinks each
    eigenvalue by a different optimal amount rather than applying one intensity
    to the whole matrix. Current state of the art.
-3. **Bootstrap confidence intervals** on the volatility differences, so the
-   comparison table carries error bars.
-4. **Time-varying covariance** (DCC-GARCH, or EWMA weighting inside the
+3. **Time-varying covariance** (DCC-GARCH, or EWMA weighting inside the
    window), which addresses a limitation shared by every estimator here: they
    all weight a return from a year ago equally with yesterday's.
+4. ~~Bootstrap confidence intervals on the comparison table~~ — done
+   (`scripts/07_significance.py`, `src/robustcov/inference.py`); see Section 5.
