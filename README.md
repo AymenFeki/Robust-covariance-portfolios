@@ -66,7 +66,7 @@ risk-free rate, drawdown before costs) are listed in
 
 **Unconstrained minimum variance:**
 
-| Estimator | Ann. vol | Sharpe | Max DD | Turnover | Leverage | Short |
+| Estimator | Ann. vol | Sharpe (net) | Max DD | Turnover | Leverage | Short |
 |---|---:|---:|---:|---:|---:|---:|
 | Sample (pseudo-inverse) | 11.77% | −0.04 | −17.4% | 8.10 | 9.2× | 411% |
 | LW-identity | 10.20% | 0.29 | −14.7% | 3.36 | 7.0× | 297% |
@@ -81,6 +81,13 @@ sample estimator's portfolio holds 411% short exposure and turns over 8× its
 book every month; after costs its Sharpe is negative. It is not a portfolio
 anyone could run. The regularised estimators are between two and eight times
 cheaper to trade.
+
+The Sharpe column is net of the 10 bps costs, and most of its spread is those
+costs. Before costs the sample estimator's Sharpe is 0.77 rather than −0.04,
+and PCA-5factor's is 1.26 rather than 1.14
+([`results/significance_unconstrained_250d.csv`](results/significance_unconstrained_250d.csv)).
+The regularised estimators earn their better net Sharpe mainly by trading
+less, not by producing better gross risk-adjusted returns.
 
 ### The result that matters most
 
@@ -177,9 +184,11 @@ each estimator's realised out-of-sample return series gives a 95%
 confidence interval for its Sharpe ratio and annualised volatility, without
 re-running the estimation itself — it asks "how much would this statistic
 move under an alternative history the market could plausibly have drawn",
-holding the estimation procedure fixed.
+holding the estimation procedure fixed. Everything in this section is
+computed on returns **before transaction costs**, so its Sharpe ratios are
+gross and not directly comparable with the net figures in the Results table.
 
-| Estimator (long-only) | Sharpe | 95% CI | Ann. vol | 95% CI |
+| Estimator (long-only) | Sharpe (gross) | 95% CI | Ann. vol | 95% CI |
 |---|---:|---:|---:|---:|
 | Sample | 0.75 | [−0.16, 1.67] | 9.67% | [8.74%, 10.75%] |
 | LW-identity | 0.76 | [−0.15, 1.68] | 9.60% | [8.65%, 10.67%] |
@@ -189,10 +198,13 @@ holding the estimation procedure fixed.
 
 The pattern the README already argued for informally is now quantified: the
 **volatility** confidence intervals are tight relative to the spread between
-estimators, so that comparison is solid. The **Sharpe ratio** intervals all
-cross zero — every one of them — so none of the return-based rankings
-anywhere in this README should be read as statistically distinguishable
-from each other, or in most cases from zero. This is the project's own
+estimators, so that comparison is solid. The long-only **Sharpe ratio**
+intervals all cross zero — every one of them. In the unconstrained case
+(`results/significance_unconstrained_250d.csv`) only MP-clipped
+[0.06, 2.05] and PCA-5factor [0.22, 2.24] exclude zero, and both still
+overlap the sample estimator's [−0.18, 1.68]. So none of the return-based
+rankings in this README should be read as statistically distinguishable
+from each other, and most are not distinguishable from zero. This is the project's own
 mechanism at work, correctly showing its limits: Sharpe ratios depend on
 realised returns, which nothing here forecasts or has any right to predict.
 
@@ -204,11 +216,11 @@ expected to show by chance alone, and asking whether the observed best
 clears that bar, correcting simultaneously for non-normal (fat-tailed,
 skewed) returns.
 
-- **Unconstrained GMV**: PCA-5factor is the best performer at SR=1.26,
+- **Unconstrained GMV**: PCA-5factor is the best performer at a gross SR=1.26,
   against a chance benchmark of 0.28 for the best of five random trials.
   Deflated Sharpe ratio **0.975** — this edge is unlikely to be pure
   selection artefact.
-- **Long-only**: LW-identity is the best performer at SR=0.76, against a
+- **Long-only**: LW-identity is the best performer at a gross SR=0.76, against a
   chance benchmark of 0.18. Deflated Sharpe ratio **0.873** — directionally
   positive, but not distinguishable from chance at the conventional 0.95
   threshold.
@@ -317,7 +329,7 @@ Stated plainly, because a backtest that does not list these is hiding them.
   impact, and impact is precisely what a 400%-short book would run into.
 - **A single realisation.** Quantified, not just asserted, in the
   "Statistical significance" section above: bootstrap confidence intervals
-  on every Sharpe ratio all cross zero, and the deflated Sharpe ratio shows
+  on every long-only Sharpe ratio cross zero, and the deflated Sharpe ratio shows
   the long-only comparison's best performer is not distinguishable from the
   best of five random strategies at conventional confidence. The volatility
   differences carry tighter intervals and remain far more trustworthy.

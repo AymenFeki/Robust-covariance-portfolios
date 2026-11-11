@@ -60,11 +60,12 @@ def _demean(returns: np.ndarray) -> tuple[np.ndarray, int, int]:
 
 
 def sample_covariance(returns: np.ndarray) -> np.ndarray:
-    """Plain sample covariance, the maximum-likelihood estimate.
+    """Plain sample covariance with the ``n - 1`` (Bessel) correction.
 
-    Unbiased, and unusable when ``p`` approaches ``n``: its smallest
-    eigenvalues are biased toward zero, which is exactly what portfolio
-    optimisation divides by. Included as the baseline that the others have
+    Each entry is unbiased (the Gaussian maximum-likelihood estimate divides
+    by ``n`` instead), yet the matrix is unusable when ``p`` approaches ``n``:
+    its smallest eigenvalues are biased toward zero, which is exactly what
+    portfolio optimisation divides by. Included as the baseline that the others have
     to beat.
     """
     Xc, n, _ = _demean(returns)

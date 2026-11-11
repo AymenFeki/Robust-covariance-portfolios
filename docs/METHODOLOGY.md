@@ -196,10 +196,10 @@ deviation adds variance beyond what the mean alone would contribute.
 exceeds the chance benchmark.
 
 Applied to this project's own results: the long-only comparison's best
-performer (LW-identity, SR=0.76) has a deflated Sharpe ratio of 0.87 against
+performer (LW-identity, gross SR=0.76) has a deflated Sharpe ratio of 0.87 against
 a chance benchmark of 0.18 for the best of five trials — a real edge is
 plausible, but not established at the conventional 0.95 threshold. The
-unconstrained comparison's best performer (PCA-5factor, SR=1.26 against a
+unconstrained comparison's best performer (PCA-5factor, gross SR=1.26 against a
 chance benchmark of 0.28) clears it at 0.975. See the README's "Statistical
 significance" section for the full tables.
 
@@ -210,7 +210,7 @@ significance" section for the full tables.
 | Survivorship bias | Inflates returns | Documented; volatility comparison is far less affected since all estimators share the universe |
 | Single regime, single dimensionality | Rankings may not hold under stress *at high `p`* | `scripts/05_crisis_robustness.py` confirms the phase-transition *mechanism* replicates independently in the 2008 crisis on a second dataset; it cannot confirm the specific four-estimator *ranking* under stress at high `p`, since the crisis panel only has 23 assets |
 | No dividends | Understates returns ≈2%/yr | Immaterial for daily covariance |
-| Multiple comparisons | Five estimators, one dataset | Quantified via `scripts/07_significance.py`: bootstrap 95% CIs on every Sharpe ratio cross zero; the long-only comparison's best performer has a deflated Sharpe ratio of 0.87 (Bailey & Lopez de Prado, 2014), not distinguishable from the best of five random strategies at the conventional 0.95 threshold. Volatility CIs are much tighter and remain the trustworthy comparison |
+| Multiple comparisons | Five estimators, one dataset | Quantified via `scripts/07_significance.py`: bootstrap 95% CIs on every long-only Sharpe ratio cross zero (computed before costs); the long-only comparison's best performer has a deflated Sharpe ratio of 0.87 (Bailey & Lopez de Prado, 2014), not distinguishable from the best of five random strategies at the conventional 0.95 threshold. Volatility CIs are much tighter and remain the trustworthy comparison |
 | No market impact | Understates the cost of high-turnover strategies | Linear costs only; the sample estimator's 8× monthly turnover would fare worse still |
 | Data cleaning discretion | Excluding tickers is a choice | Every exclusion is listed by name and date in the cleaning report, for both datasets |
 
