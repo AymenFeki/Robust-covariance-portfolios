@@ -131,6 +131,18 @@ and that it reduces to inverse-volatility weighting when correlations vanish.
 - **Metrics**: annualised volatility is the primary one — these are
   minimum-variance portfolios, so it is what they optimise. Sharpe ratios are
   reported but depend on realised returns, which nothing here forecasts.
+- **Metric conventions** (`BacktestResult.summary` in `backtest.py`):
+  - Returns are daily log returns. The portfolio return is `wᵀr` on log
+    returns, which approximates the exact simple-return aggregation; the gap
+    is negligible at daily frequency.
+  - Annualised return is the arithmetic daily mean × 252, net of costs.
+    Volatility is the daily standard deviation × √252, before costs.
+  - The Sharpe ratio uses a **zero risk-free rate** (net mean ÷ volatility).
+    US short rates stayed well under 1% over 2012–2017, so subtracting T-bill
+    yields would lower every Sharpe ratio by a similar small amount and leave
+    the ranking unchanged.
+  - Maximum drawdown is measured on the cumulative log-return path, before
+    costs. −17.4% in log terms is about −16.0% as a simple return.
 
 Look-ahead is checked mechanically. `test_every_rebalance_uses_only_its_own_
 trailing_window` perturbs one day before a rebalance and asserts the weights

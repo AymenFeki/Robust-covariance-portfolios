@@ -13,7 +13,7 @@ bias mechanically rather than by inspection.
 src/robustcov/     shrinkage, random-matrix filtering, factor models,
                    portfolio optimisers, walk-forward engine
 scripts/           reproduce every number and figure in this README
-tests/             55 tests: mathematical properties + a no-look-ahead check
+tests/             81 tests: mathematical properties + a no-look-ahead check
 ```
 
 ---
@@ -60,7 +60,9 @@ holding returns out isolates the question actually being asked.
 
 428 US large caps, August 2012 – August 2017. 250-day estimation window,
 monthly rebalancing, 10 bps of one-way transaction cost, everything strictly
-out of sample.
+out of sample. Metric conventions (daily log returns, Sharpe with a zero
+risk-free rate, drawdown before costs) are listed in
+[`docs/METHODOLOGY.md`](docs/METHODOLOGY.md#4-backtest-protocol).
 
 **Unconstrained minimum variance:**
 
