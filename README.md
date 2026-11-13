@@ -13,7 +13,7 @@ bias mechanically rather than by inspection.
 src/robustcov/     shrinkage, random-matrix filtering, factor models,
                    portfolio optimisers, walk-forward engine
 scripts/           reproduce every number and figure in this README
-tests/             81 tests: mathematical properties + a no-look-ahead check
+tests/             78 tests: mathematical properties + a no-look-ahead check
 ```
 
 ---
@@ -280,14 +280,14 @@ python scripts/03_backtest.py --cost-bps 10        # the results tables
 python scripts/04_window_sweep.py                  # the window sweep figure
 python scripts/05_crisis_robustness.py             # the 2008-crisis robustness check
 python scripts/07_significance.py                  # bootstrap CIs + deflated Sharpe ratio
-pytest                                             # 81 tests
+pytest                                             # 78 tests
 ```
 
 Every number in this README is printed by those scripts. Runtime is about
 four minutes total on a laptop (07_significance.py's bootstrap is the
 slowest single step, ~1 minute at the default 2000 resamples — pass
 `--n-boot 500` for a quicker, slightly less precise pass); dependencies are
-numpy, pandas, matplotlib, scipy (tests only) and pytest.
+numpy, pandas, matplotlib, scipy and pytest.
 
 ### Running it on your own data
 

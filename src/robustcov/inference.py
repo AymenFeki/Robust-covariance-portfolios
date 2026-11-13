@@ -23,11 +23,11 @@ walk-forward backtest over a rolling covariance estimate.
 
 from __future__ import annotations
 
-import math
 from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 
 __all__ = [
     "block_bootstrap_ci",
@@ -223,54 +223,6 @@ def skew_kurtosis(returns: np.ndarray) -> tuple[float, float]:
     return float(skew), float(kurtosis)
 
 
-def _norm_cdf(x: np.ndarray | float) -> np.ndarray | float:
-    """Standard normal CDF without a scipy dependency."""
-    arr = np.atleast_1d(np.asarray(x, dtype=float)) / np.sqrt(2.0)
-    erf_vals = np.array([math.erf(v) for v in arr], dtype=float)
-    result = 0.5 * (1.0 + erf_vals)
-    return float(result[0]) if np.ndim(x) == 0 else result
-
-
-def _norm_ppf(p: float) -> float:
-    """Standard normal quantile (inverse CDF), Acklam's rational approximation.
-
-    Accurate to about 1e-9 over ``(0, 1)`` -- ample for the deflated Sharpe
-    ratio, which only ever calls this at ``1 - 1/N`` for small integer
-    ``N``. Avoids adding scipy as a runtime dependency for one function.
-    """
-    if not 0.0 < p < 1.0:
-        raise ValueError("p must be strictly between 0 and 1")
-
-    a = [-3.969683028665376e01, 2.209460984245205e02, -2.759285104469687e02,
-         1.383577518672690e02, -3.066479806614716e01, 2.506628277459239e00]
-    b = [-5.447609879822406e01, 1.615858368580409e02, -1.556989798598866e02,
-         6.680131188771972e01, -1.328068155288572e01]
-    c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e00,
-         -2.549732539343734e00, 4.374664141464968e00, 2.938163982698783e00]
-    d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e00,
-         3.754408661907416e00]
-
-    p_low = 0.02425
-    p_high = 1 - p_low
-
-    if p < p_low:
-        q = np.sqrt(-2 * np.log(p))
-        return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / (
-            (((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1
-        )
-    if p <= p_high:
-        q = p - 0.5
-        r = q * q
-        return (
-            (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q
-            / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1)
-        )
-    q = np.sqrt(-2 * np.log(1 - p))
-    return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / (
-        (((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1
-    )
-
-
 def expected_max_sharpe(sharpe_variance: float, n_trials: int) -> float:
     """Expected Sharpe ratio of the best of ``n_trials`` strategies, under the
     null that all of them have true Sharpe ratio zero.
@@ -297,8 +249,8 @@ def expected_max_sharpe(sharpe_variance: float, n_trials: int) -> float:
     if sharpe_variance < 0:
         raise ValueError("sharpe_variance cannot be negative")
 
-    term1 = (1 - _EULER_MASCHERONI) * _norm_ppf(1 - 1.0 / n_trials)
-    term2 = _EULER_MASCHERONI * _norm_ppf(1 - 1.0 / (n_trials * np.e))
+    term1 = (1 - _EULER_MASCHERONI) * norm.ppf(1 - 1.0 / n_trials)
+    term2 = _EULER_MASCHERONI * norm.ppf(1 - 1.0 / (n_trials * np.e))
     return float(np.sqrt(sharpe_variance) * (term1 + term2))
 
 
@@ -367,7 +319,7 @@ def deflated_sharpe_ratio(
         # square root; treat as maximal uncertainty rather than raising.
         return 0.5
     z = (observed_sharpe - benchmark_sharpe) * np.sqrt(n_obs - 1) / np.sqrt(denom)
-    return float(_norm_cdf(z))
+    return float(norm.cdf(z))
 
 
 def deflated_sharpe_ratio_from_returns(
