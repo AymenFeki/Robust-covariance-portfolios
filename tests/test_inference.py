@@ -12,10 +12,9 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from scipy.stats import norm
 
 from robustcov.inference import (
-    _norm_cdf,
-    _norm_ppf,
     annualized_vol_ci,
     block_bootstrap_ci,
     deflated_sharpe_ratio,
@@ -25,27 +24,6 @@ from robustcov.inference import (
     sharpe_ratio_ci,
     skew_kurtosis,
 )
-
-# --------------------------------------------------------------- normal CDF/PPF
-
-
-def test_norm_cdf_at_known_quantiles():
-    """Textbook values: Phi(0)=0.5, Phi(1.96)=0.975, Phi(-1.96)=0.025."""
-    assert _norm_cdf(0.0) == pytest.approx(0.5, abs=1e-9)
-    assert _norm_cdf(1.959963986120195) == pytest.approx(0.975, abs=1e-6)
-    assert _norm_cdf(-1.959963986120195) == pytest.approx(0.025, abs=1e-6)
-
-
-def test_norm_ppf_is_the_inverse_of_norm_cdf():
-    for p in [0.001, 0.025, 0.1, 0.5, 0.9, 0.975, 0.999]:
-        assert _norm_cdf(_norm_ppf(p)) == pytest.approx(p, abs=1e-6)
-
-
-def test_norm_cdf_handles_arrays():
-    out = _norm_cdf(np.array([0.0, 1.0, -1.0]))
-    assert out.shape == (3,)
-    assert out[0] == pytest.approx(0.5)
-
 
 # --------------------------------------------------------------- skew/kurtosis
 
@@ -216,7 +194,7 @@ def test_dsr_matches_lo_2002_variance_under_gaussian_assumptions():
     """
     sr, n_obs = 0.04, 500
     dsr = deflated_sharpe_ratio(sr, 0.0, n_obs=n_obs, skew=0.0, kurtosis=3.0)
-    expected = _norm_cdf(sr * np.sqrt(n_obs - 1) / np.sqrt(1 + 0.5 * sr**2))
+    expected = norm.cdf(sr * np.sqrt(n_obs - 1) / np.sqrt(1 + 0.5 * sr**2))
     assert dsr == pytest.approx(expected, abs=1e-9)
 
 
